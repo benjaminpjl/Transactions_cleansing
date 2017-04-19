@@ -29,6 +29,8 @@ import nltk
 import re
 import string
 import seaborn as sns
+%matplotlib inline
+import matplotlib.pyplot as plt
 
 #Pandas options
 pd.set_option('display.max_rows', 500)
@@ -46,170 +48,101 @@ df2 = df.copy(deep=True)
 df2['description'] = df2['description'].str.lower()
 
 #Import subscriptions data
-colnames = ['name', 'presence', 'keyword', 'type', 'unknown']
-sub = pd.read_csv("data/subscriptions.csv", names = colnames, header = None)
-del sub['unknown']
+colnames = ['name', 'presence', 'keyword', 'type']
+sub = pd.read_csv("data/subscriptions.csv", names = colnames, header = None, converters={"keyword": lambda x: x.split("|")})
+
+# Add a column for number of users 
+  
+
+sub = sub.loc[sub['presence']==1]
 
 #SEARCH FOR A KEYWORD
-print df.loc[df2["description"].str.contains('amazon')]['description']
+#print df.loc[df2["description"].str.contains('co-op')]['description']
+#Search for a particular subscription
+#keywords=  ["southern electric", "se gas"]
+#df.loc[df2["description"].str.contains('|'.join(keywords))]['description']         
+
+        
+
 
 #For each subscriptions print results of the search based on the keyword
-for row in sub.itertuples():
-    print row[1]
-    print df.loc[df2["description"].str.contains(row[3])]['description']
-    raw_input('')
+#This function is used to check the quality of the keywords
 
+def print_subscriptions(data):
+    
+    for i, row in data.iterrows():
+        print i 
+        print row['keyword']
+        print '|'.join(row['keyword'])
+        result = df.loc[df2["description"].str.contains('|'.join(row['keyword']))]
+        print result['description']
+        raw_input('') #press key to change subscription
     
     
-
-
-###Statistics on Water###
-
-print "###### Statistics on Water providers ######", '\n'
-
-#print df.loc[df2["description"].str.contains("water")]['description']
-
-water_keywords = {'Thames Water': 'thames water', 'Affinity water': 'affinity water', 'Castle Water': 'castle water'}
-number_of_subscribers = {}
-list_user_water = []
-for key, val in water_keywords.iteritems():
-    list_index = df2.loc[df2["description"].str.contains(val)]['hashed_user_id'].tolist()
-    list_index = list(set(list_index))
-    number_of_subscribers[key] = len(list_index)
-    list_user_water.extend(list_index)
+#This function adds a column "number_of_users" to the subscription dataframe
+#It is the number of users for a given subscription
+def number_users_per_subscription(data):
     
-sorted_subscriptions = sorted(number_of_subscribers.items(), key=lambda x: x[1])[::-1]
-for item in sorted_subscriptions:
-    print item[0], ":", item[1]  
-  
-print sorted_subscriptions
-print sorted_subscriptions[:][1]
-list_user_water = list(set(list_user_water))
-
-print '\n'
-print "Number of users that have water bills:", len(list_user_water)
-print "Percentage of users:", int(float(len(list_user_water))/float(len(list_of_users))*100),"%", '\n'
-
-sns.countplot(sorted_subscriptions.keys(), sorted_subscriptions.values())
-
-#print "----------- List of users that have water bills ---------------"
-#print list(list_user_water)
-
-
-list_non_water = [item for item in list_of_users if item not in list_user_water]
-#print "----------- Number of users that do not have water bills ---------------"
-#print len(list_non_water), '\n'
-
-#print "----------- List of users that do not have energy bills ---------------"
-#print list_non_water, '\n'
-
-
-###Statistics on Energy###
-
-print "###### Statistics on Energy providers ######", '\n'
-
-print df.loc[df2["description"].str.contains("t-mobile",re.IGNORECASE)]['description']
-
-energy_keywords = {'EDF':'edf', 'NPower': 'npower', 'E.ON': 'e\.on', 'British Gas': 'gas', 'Scottish Power': 'scottish'}
-number_of_subscribers = {}
-list_user_energy = []
-for key, val in energy_keywords.iteritems():
-    list_index = df2.loc[df2["description"].str.contains(val)]['hashed_user_id'].tolist()
-    list_index = list(set(list_index))
-    number_of_subscribers[key] = len(list_index)
-    list_user_energy.extend(list_index)         
-
-sorted_subscriptions = sorted(number_of_subscribers.items(), key=lambda x: x[1])[::-1]
-for item in sorted_subscriptions:
-    print item[0], ":", item[1]     
-
+    data['number_of_users'] = 0 
+    for i, row in data.iterrows():
+        number_of_users = 0
+        result = df.loc[df2["description"].str.contains('|'.join(row['keyword']))]
+        number_of_users = len(result['hashed_user_id'].unique())
+        data.ix[i, 'number_of_users'] =  number_of_users
+    return sub
     
-list_user_energy= list(set(list_user_energy))
-
-print '\n'
-print "Number of users that have energy bills:", len(list_user_energy)
-print "Percentage of users:", int(float(len(list_user_energy))/float(len(list_of_users))*100),"%", '\n'
-
-#print "----------- List of users that have energy bills ---------------"
-#print list_user_energy, '\n'
-
-
-#list_non_energy = [item for item in list_of_users if item not in list_user_energy]
-#print "Number of users that do not have energy bills:"
-#print len(list_non_energy), '\n'
-
-#print "----------- List of users that do not have energy bills ---------------"
-#print list_non_energy, '\n'
-
-###Statistics on Mobile Phone providers###
-
-print "###### Statistics on Mobile Phone providers ######", '\n', '\n'
-
-#print df.loc[df2["description"].str.contains("ee")]['description']
-mobile_keywords = {'EE T-mobile':'t-mobile', 'Virgin Mobile': 'virgin mobile', 'Three': 'h3g', 'GIFFGAFF': 'giffgaff', 'Talk talk': 'talktalk', 'Vodafone': 'vodafone'}
-number_of_subscribers = {}
-list_user_mobile = []
-for key, val in mobile_keywords.iteritems():
-    list_index = df2.loc[df2["description"].str.contains(val)]['hashed_user_id'].tolist()
-    list_index = list(set(list_index))
-    number_of_subscribers[key] = len(list_index)
-    list_user_mobile.extend(list_index)              
-
+#This function adds a column "list_of_users" to the subscription dataframe
+#It is the list of "hashed_user_id" that are subscribed to this subscription
+def list_users_per_subscription(data):
     
-sorted_subscriptions = sorted(number_of_subscribers.items(), key=lambda x: x[1])[::-1]
-for item in sorted_subscriptions:
-    print item[0], ":", item[1]
-           
-list_user_mobile = list(set(list_user_mobile))
-
-print '\n'
-print "Number of users that have mobile bills:", len(list_user_mobile)
-print "Percentage of users:", int(float(len(list_user_mobile))/float(len(list_of_users))*100),"%", '\n'
-
-
-#print "----------- List of users that have mobile bills ---------------"
-#print list(list_user_mobile)
-
-
-list_non_mobile = [item for item in list_of_users if item not in list_user_mobile]
-#print "----------- Number of users that do not have mobile bills ---------------"
-#print len(list_non_mobile), '\n'
-
-#print "----------- List of users that do not have mobile bills ---------------"
-#print list_non_mobile, '\n'
-
-
-
-###Statistics on Broadband providers###
-
-print "###### Statistics on Broadband and TV providers ######", '\n', '\n'
-
-#print df.loc[df2["description"].str.contains("tv licence")]['description']
-broadband_keywords = {'Sky Digital': 'sky digital', 'Virgin Media': 'virgin media', 'Netflix': 'netflix', 'Tvlicensing.co': 'tvlicensing', 'TV licence MBP': 'tv licence'}
-number_of_subscribers = {}
-list_user_broadband = []
-for key, val in broadband_keywords.iteritems():
-    list_index = df2.loc[df2["description"].str.contains(val)]['hashed_user_id'].tolist()
-    list_index = list(set(list_index))
-    number_of_subscribers[key] = len(list_index)
-    list_user_broadband.extend(list_index)     
-
-sorted_subscriptions = sorted(number_of_subscribers.items(), key=lambda x: x[1])[::-1]
-for item in sorted_subscriptions:
-    print item[0], ":", item[1]
-           
+    data['list of users'] = np.empty((len(sub), 0)).tolist()
+    for i, row in data.iterrows():
+        result = df.loc[df2["description"].str.contains('|'.join(row['keyword']))]
+        indexes = result.index.tolist()
+        users = df.ix[indexes]["hashed_user_id"].unique()
+        data.ix[i, 'list of users'].extend(users)
         
-list_user_broadband = list(set(list_user_broadband))
+    return sub
+    
 
-print '\n'
-print "Number of users that have broadband bills:", len(list_user_broadband)
-print "Percentage of users:", int(float(len(list_user_broadband))/float(len(list_of_users))*100),"%", '\n'
+#Add number of users
+sub = number_users_per_subscription(sub)
 
-#print "----------- List of users that have broadband bills ---------------"
-#print list(list_user_broadband)
+#Add list of users
+sub = list_users_per_subscription(sub)
+print sub
 
-#print "----------- Number of users that do not have broadband bills -------------"
-#print len(list_non_broadband), '\n'
+#This function return the list of users that are subscribed to a particular subscription
+def print_users_for_subscription(subscription):
+    users = sub.loc[sub['name'] == subscription]["list of users"].tolist()[0]
+    print "The list of users subscribed to", subscription, "is:", users
 
-#print "----------- List of users that do not have broadband bills ---------------"
-#print list_non_broadband, '\n'
+#print_users_for_subscription('Amazon')
+
+
+
+######GLOBAL DASHBOARD#######
+
+#Plotting parameters
+
+plt.rcParams['figure.figsize']=(20,10)
+
+#List of types to plot in the dashboard
+types = ["energy", "water", "broadband", "mobile", "bank" ]
+
+###Plotting number of users for energy providers###
+
+def plot_dashboard(types):
+    for category in types:
+        plt.figure()
+        sub_plot = sub.loc[sub['type']==category]
+        sub_plot = sub_plot.sort(columns = 'number_of_users', ascending = False)
+        data_plot = sub_plot[['name', 'number_of_users']]
+
+
+        fig = sns.barplot(x = "name", y= 'number_of_users', data = data_plot)  
+        fig.set(xlabel = 'Provider', ylabel = 'Number of Mobillity users')
+        sns.plt.title(category.upper(), fontsize = 18)    
+        plt.show()
+
+plot_dashboard(types)
