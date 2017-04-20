@@ -31,7 +31,7 @@ import string
 import seaborn as sns
 %matplotlib inline
 import matplotlib.pyplot as plt
-
+import preprocessing as prepro
 #Pandas options
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.width', 2000)
@@ -41,15 +41,17 @@ os.chdir("/Users/benjaminpujol/Documents/Mobillity/Transactions_cleansing")
 
 
 #Import transactions data 
-df = pd.read_csv("data/RAW_TRANSACTION.csv")
+preprocess  = prepro.feature_preprocessing("data/RAW_TRANSACTION.csv")
+preprocess.full_preprocess()
+df = preprocess.data
 
 #Transform description to lower case
 df2 = df.copy(deep=True)
 df2['description'] = df2['description'].str.lower()
 
 #Import subscriptions data
-colnames = ['name', 'presence', 'keyword', 'type']
-sub = pd.read_csv("data/subscriptions.csv", names = colnames, header = None, converters={"keyword": lambda x: x.split("|")})
+colnames = ['name', 'presence', 'keyword', 'exclude', 'type']
+sub = pd.read_csv("data/subscriptions.csv", names = colnames, header = None, converters={"keyword": lambda x: x.split("|"), "exclude": lambda x: x.split("|")})
 
 # Add a column for number of users 
   
@@ -74,10 +76,16 @@ def print_subscriptions(data):
         print i 
         print row['keyword']
         print '|'.join(row['keyword'])
-        result = df.loc[df2["description"].str.contains('|'.join(row['keyword']))]
+        result = df.loc[df2["description"].str.contains('|'.join(row['keyword']))] 
+        print result['description']
+        print '|'.join(row['exclude'])
+        result_lower = result.copy(deep = True)
+        result_lower["description"] = result_lower["description"].str.lower()
+        result = result.loc[result_lower["description"].str.contains('|'.join(row['exclude']))==False]
         print result['description']
         raw_input('') #press key to change subscription
-    
+
+print_subscriptions(sub)
     
 #This function adds a column "number_of_users" to the subscription dataframe
 #It is the number of users for a given subscription
@@ -145,4 +153,3 @@ def plot_dashboard(types):
         sns.plt.title(category.upper(), fontsize = 18)    
         plt.show()
 
-plot_dashboard(types)
