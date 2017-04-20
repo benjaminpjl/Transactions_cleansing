@@ -61,10 +61,10 @@ sub = sub.loc[sub['presence']==1]
 #SEARCH FOR A KEYWORD
 #print df.loc[df2["description"].str.contains('co-op')]['description']
 #Search for a particular subscription
-#keywords=  ["southern electric", "se gas"]
-#df.loc[df2["description"].str.contains('|'.join(keywords))]['description']         
+keyword=  ["sainsburys s/mkts", "sainsbury's s/mkt","sainsbury's supermarkets"]
+keywords=  ["royal"]
+print df.loc[df2["description"].str.contains('|'.join(keywords))]['description']         
 
-        
 
 
 #For each subscriptions print results of the search based on the keyword
